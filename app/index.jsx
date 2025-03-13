@@ -1,10 +1,21 @@
 import { Image, Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import Colors from '../constant/Colors';
 import { useRouter } from "expo-router";
+import {onAuthStateChanged} from 'firebase/auth';
+import { auth, db } from './../config/firebaseConfig';
+import { doc, getDoc } from "firebase/firestore";
 
 export default function Index() {
 
   const router=useRouter();
+
+  onAuthStateChanged(auth,async(user)=>{
+    if(user)
+    {
+      console.log(user);
+      const result=await getDoc(doc(db,'users',user?.email))
+    }
+  })
 
   return (
     <View
