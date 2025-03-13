@@ -1,16 +1,18 @@
 import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Pressable } from 'react-native'
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import Colors from './../../constant/Colors'
 import { useRouter } from 'expo-router'
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../config/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
+import { UserDetailContext } from '../../context/UserDetailContext';
 
 export default function SignUp() {
   const router=useRouter();
   const [fullName, setFullName]=useState();
   const [email, setEmail]=useState();
   const [password, setPassword]=useState();
+  const {userDetail,setUserDetail}=useContext(UserDetailContext);
 
   const CreateNewAccount=()=>{
     createUserWithEmailAndPassword(auth, email, password)
@@ -26,12 +28,16 @@ export default function SignUp() {
   }
 
   const SaveUser=async(user)=>{
-    await setDoc(doc(db,'users',email),{
+    const data = {
         name:fullName,
         email:email,
         member:false,
         uid:user?.uid
-    })
+    }
+
+    await setDoc(doc(db,'users',email),data)
+
+    setUserDetail(data);
 
     // Navigate to New Screen
   }
