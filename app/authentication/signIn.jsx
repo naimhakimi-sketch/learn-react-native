@@ -1,10 +1,54 @@
 import { View, Text, Image, TextInput, StyleSheet, TouchableOpacity, Pressable } from 'react-native'
-import React from 'react'
+import React, { useContext, useState } from 'react'
 import Colors from './../../constant/Colors'
 import { useRouter } from 'expo-router'
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, db } from '../../config/firebaseConfig';
+import { ToastAndroid, Alert, Platform } from 'react-native';
+import { doc, getDoc } from 'firebase/firestore';
+import { UserDetailContext } from '../../context/UserDetailContext';
+import { ActivityIndicator } from 'react-native-web';
+
 
 export default function SignIn() {
   const router = useRouter();
+  const [email,setEmail]=useState();
+  const [password,setPassword]=useState();
+  const {userDetail,setUserDetail}=useContext(UserDetailContext);
+  const [loading,setLoading]=useState(false);
+
+  console.log(ToastAndroid); // Should print an object with 'show' and 'showWithGravity' methods.
+
+
+  const onSignInClick = () => {
+    setLoading(true)
+    signInWithEmailAndPassword(auth, email, password)
+      .then(async(resp) => {
+        const user = resp.user;
+        console.log(user);
+        await getUserDetails();
+        setLoading(false);
+        router.replace('/(tabs)/home');
+      })
+      .catch((e) => {
+        console.log(e);    
+        setLoading(false);
+        const errorMessage = "Incorrect Email & Password";
+        
+        if (Platform.OS === "android") {
+          ToastAndroid.show(errorMessage, ToastAndroid.SHORT);
+        } else {
+          Alert.alert("Error", errorMessage);
+        }
+      });
+  };
+
+  const getUserDetails=async()=>{
+    const result=await getDoc(doc(db, 'users', email));
+    console.log(result.data())
+    setUserDetail(result.data())
+  }
+
   return (
     <View style={{
             display: 'flex',
@@ -28,25 +72,40 @@ export default function SignIn() {
                 fontFamily: 'outfit-bold'
             }}>Welcome Back</Text>
     
-            <TextInput placeholder='Email' style={styles.textInput}/>
-            <TextInput placeholder='Password' secureTextEntry={true} style={styles.textInput}/>
+            <TextInput placeholder='Email' 
+            onChangeText={(value)=>setEmail(value)}
+            style={styles.textInput}/>
+            <TextInput placeholder='Password' 
+            onChangeText={(value)=>setPassword(value)}
+            secureTextEntry={true} style={styles.textInput}/>
     
             <TouchableOpacity
+                onPress={onSignInClick} // ✅ Removed unnecessary parentheses
+                disabled={loading}
                 style={{
                     padding: 15,
-                    backgroundColor: Colors.PRIMARY,
-                    width: '100%',
+                    backgroundColor: Colors?.PRIMARY ?? "#007bff", // ✅ Default color if Colors.PRIMARY is undefined
+                    width: "100%",
                     marginTop: 25,
-                    borderRadius: 10
+                    borderRadius: 10,
                 }}
-            >
-                <Text style={{
-                    fontFamily: 'outfit',
-                    fontSize: 20,
-                    color: Colors.WHITE,
-                    textAlign: 'center'
-                }}>Sign In</Text>
+                >
+                {!loading ? (
+                    <Text
+                    style={{
+                        fontFamily: "outfit",
+                        fontSize: 20,
+                        color: Colors?.WHITE ?? "#fff", // ✅ Default color if Colors.WHITE is undefined
+                        textAlign: "center",
+                    }}
+                    >
+                    Sign In
+                    </Text>
+                ) : (
+                    <ActivityIndicator size={"large"} color={Colors?.WHITE ?? "#fff"} />
+                )}
             </TouchableOpacity>
+
             
             <View style={{
                 display: 'flex',
